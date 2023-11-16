@@ -1,4 +1,4 @@
-'''
+"""
 .. versionadded:: 0.1
 
 Ported from `lodash/debounce.js <https://github.com/lodash/lodash/blob/75690245aae87f85afe8f5309230f2029e757f93/debounce.js>`_.
@@ -54,22 +54,24 @@ lodash license text::
     maintained libraries used by this software which have their own
     licenses; we recommend you read them, as their terms may differ from the
     terms above.
-'''
+"""
 import time
+import asyncio
+
+from typing import Optional
 
 from logging_helpers import _L
 
 from ._version import get_versions
 
-
 __version__ = get_versions()['version']
 del get_versions
 
 
-class DebounceBase(object):
-    def __init__(self, func, wait, leading=False, max_wait=None,
-                 trailing=True, debug=False):
-        '''
+class DebounceBase:
+    def __init__(self, func, wait: int, leading: bool = False, max_wait: Optional[int] = None,
+                 trailing: bool = True, debug: bool = False):
+        """
         Creates a debounced function that delays invoking :data:`func` until
         after :data:`wait` milliseconds have elapsed since the last time the
         debounced function was invoked, or until the next browser frame is
@@ -118,7 +120,7 @@ class DebounceBase(object):
 
         .. versionchanged:: 0.4.1
             Fix where :data:`max_wait` is not set.
-        '''
+        """
         self.lastArgs = None
         self.lastKwArgs = None
         self.result = None
@@ -133,15 +135,14 @@ class DebounceBase(object):
         self.maxing = max_wait is not None
 
         self.wait = 1e-3 * wait
-        self.max_wait =  (1e-3 * max(max_wait, wait)
-                          if self.maxing else None)
+        self.max_wait = 1e-3 * max(max_wait, wait) if self.maxing else None
         self.func = func
 
     def __call__(self, *args, **kwargs):
-        '''
+        """
         .. versionchanged:: 0.4
             Accept keyword arguments.
-        '''
+        """
         time_ = time.time()
         isInvoking = self.shouldInvoke(time_)
 
@@ -169,7 +170,7 @@ class DebounceBase(object):
         self.lastInvokeTime = time_
         self.result = self.func(*args, **kwargs)
         if self.debug:
-            _L().debug('time: %s, result: %s', time_, self.result)
+            print(f'time: {time_}, result: {self.result}')
         return self.result
 
     def startTimer(self, pendingFunc, wait):
@@ -215,7 +216,7 @@ class DebounceBase(object):
             result = ((timeSinceLastCall >= self.wait) or
                       (timeSinceLastCall < 0))
         if self.debug:
-            _L().debug('%s', result)
+            _L().debug('%s' %result)
         return result
 
     def timerExpired(self):
@@ -260,28 +261,46 @@ class DebounceBase(object):
 
 
 class Debounce(DebounceBase):
-    '''
+    """
     .. versionadded:: 0.3
 
     Implementation using gobject event loop for delayed function calls.
-    '''
+    """
+
+    def __init__(self, *args, **kwargs):
+        import gobject
+        self.gobject = gobject
+        super().__init__(*args, **kwargs)
+
     def startTimer(self, pendingFunc, wait):
-        '''
+        """
         .. versionchanged:: 0.4.1
             Fix timeout duration.
-        '''
-        import gobject
+        """
 
         def _wrapped(*args):
             pendingFunc()
             # Only call once.
             return False
-        timer_id = gobject.timeout_add(int(wait * 1e3), _wrapped)
-        _L().debug('timer_id: %s', timer_id)
+
+        timer_id = self.gobject.timeout_add(int(wait * 1e3), _wrapped)
+        _L().debug(f'timer_id: {timer_id}')
         return timer_id
 
     def cancelTimer(self, timer_id):
-        import gobject
+        _L().debug(f'timer_id: {timer_id}')
+        return self.gobject.source_remove(timer_id)
 
-        _L().debug('timer_id: %s', timer_id)
-        return gobject.source_remove(timer_id)
+
+class DebounceAsync(DebounceBase):
+    """
+    .. versionadded:: 0.3
+
+    Implementation using asyncio event loop for delayed function calls.
+    """
+    def startTimer(self, pending_func, wait):
+        loop = asyncio.get_event_loop()
+        return loop.call_later(wait, pending_func)
+
+    def cancelTimer(self, timer_id):
+        return timer_id.cancel()

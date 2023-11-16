@@ -3,24 +3,25 @@
 {% else %}
 {% set GIT_VERSION = GIT_DESCRIBE_TAG[1:] %}
 {% endif %}
-source:
-  git_url: ../
-
 package:
   name: debounce
   version: {{ GIT_VERSION }}
 
 build:
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  number: 0
   noarch: python
-  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+  script: python setup.py install --single-version-externally-managed --record record.txt
 
 requirements:
   host:
     - pip
-    - python
+    - python >=3.8
 
   run:
     - pip
+    - python >=3.8
     - logging-helpers
 
 test:
@@ -30,3 +31,8 @@ test:
 about:
   home: https://github.com/sci-bots/{{ PKG_NAME }}
   license: BSD
+  summary: Python port of lodash.debounce
+
+source:
+#  git_url: ../
+  path: ..
