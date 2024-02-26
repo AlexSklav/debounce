@@ -216,13 +216,13 @@ class DebounceBase:
             result = ((timeSinceLastCall >= self.wait) or
                       (timeSinceLastCall < 0))
         if self.debug:
-            _L().debug('%s' %result)
+            _L().debug(f'{result}')
         return result
 
     def timerExpired(self):
         time_ = time.time()
         if self.debug:
-            _L().debug('time: %s', time_)
+            _L().debug(f'time: {time_}')
         if self.shouldInvoke(time_):
             return self.trailingEdge(time_)
         # Restart the timer.
@@ -232,9 +232,7 @@ class DebounceBase:
     def trailingEdge(self, time_):
         self.timerId = None
         if self.debug:
-            _L().debug('trailing: %s, lastArgs: %s, lastKwArgs: %s',
-                       self.trailing, self.lastArgs, self.lastKwArgs)
-
+            _L().debug(f'trailing: {self.trailing}, lastArgs: {self.lastArgs}, lastKwArgs: {self.lastKwArgs}')
         # Only invoke if we have `self.lastArgs` which means `func` has been
         # debounced at least once.
         if self.trailing and self.lastArgs is not None:
