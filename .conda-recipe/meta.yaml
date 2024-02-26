@@ -17,11 +17,11 @@ build:
 requirements:
   host:
     - pip
-    - python >=3.8
+    - python >=3.6
 
   run:
     - pip
-    - python >=3.8
+    - python >=3.6
     - logging-helpers
 
 test:
