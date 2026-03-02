@@ -258,38 +258,6 @@ class DebounceBase:
         return self.timerId is not None
 
 
-class Debounce(DebounceBase):
-    """
-    .. versionadded:: 0.3
-
-    Implementation using gobject event loop for delayed function calls.
-    """
-
-    def __init__(self, *args, **kwargs):
-        import gobject
-        self.gobject = gobject
-        super().__init__(*args, **kwargs)
-
-    def startTimer(self, pendingFunc, wait):
-        """
-        .. versionchanged:: 0.4.1
-            Fix timeout duration.
-        """
-
-        def _wrapped(*args):
-            pendingFunc()
-            # Only call once.
-            return False
-
-        timer_id = self.gobject.timeout_add(int(wait * 1e3), _wrapped)
-        _L().debug(f'timer_id: {timer_id}')
-        return timer_id
-
-    def cancelTimer(self, timer_id):
-        _L().debug(f'timer_id: {timer_id}')
-        return self.gobject.source_remove(timer_id)
-
-
 class DebounceAsync(DebounceBase):
     """
     .. versionadded:: 0.3
@@ -297,7 +265,7 @@ class DebounceAsync(DebounceBase):
     Implementation using asyncio event loop for delayed function calls.
     """
     def startTimer(self, pending_func, wait):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return loop.call_later(wait, pending_func)
 
     def cancelTimer(self, timer_id):
